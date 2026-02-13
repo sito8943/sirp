@@ -1,4 +1,6 @@
-# Subscription Intelligence Research Platform (SIRP) – Domain-Driven Design (DDD)
+# Subscription Intelligence Research Platform (SIRP)
+
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/d6efec08-9017-43b7-9dd5-156e9be9388d" />
 
 The Subscription Intelligence Research Platform (SIRP) is a research-grade subscription tracking system implemented using **Domain-Driven Design (DDD)**.
 

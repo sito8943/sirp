@@ -4,7 +4,7 @@ Django settings for the SIRP console.
 
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
 
 SECRET_KEY = "django-insecure-sirp-placeholder-secret-key"
 DEBUG = True

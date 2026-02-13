@@ -6,7 +6,7 @@ The Subscription Intelligence Research Platform (SIRP) is a research-grade subsc
 
 ## ⚙️ Plain Django Scaffold
 
-A vanilla Django project (no custom functionality) now lives under `sirp_django_project/`.  
+A vanilla Django project (no custom functionality) now lives under `sirp_django_project/`.
 Run it like any default Django install:
 
 ```bash

@@ -1,8 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import generic
 
 from .models import BillingCycle, NotificationRule, Provider, RenewalEvent, Subscription
+
+
+class LandingPageView(generic.TemplateView):
+    template_name = "home.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("subscriptions:dashboard")
+        return super().dispatch(request, *args, **kwargs)
 
 
 class DashboardView(LoginRequiredMixin, generic.TemplateView):

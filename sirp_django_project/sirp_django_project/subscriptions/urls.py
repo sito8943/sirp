@@ -5,7 +5,7 @@ from . import views
 app_name = "subscriptions"
 
 urlpatterns = [
-    path("", views.DashboardView.as_view(), name="dashboard"),
+    path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
     path("providers/", views.ProviderListView.as_view(), name="provider-list"),
     path("providers/add/", views.ProviderCreateView.as_view(), name="provider-add"),
     path("providers/<uuid:pk>/", views.ProviderDetailView.as_view(), name="provider-detail"),

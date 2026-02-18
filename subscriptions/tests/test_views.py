@@ -69,7 +69,7 @@ class SignUpFlowTests(TestCase):
         response = self.client.post(reverse("signup"), payload)
 
         self.assertEqual(response.status_code, 409)
-        self.assertContains(response, "Username already exists.")
+        self.assertContains(response, "Username already exists.", status_code=409)
 
 
 class LoginFlowTests(TestCase):

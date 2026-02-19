@@ -8,7 +8,6 @@ from typing import Iterable
 from django.contrib.auth.models import AbstractBaseUser
 from django.utils import timezone
 
-from .currency import convert_to_base
 from .models import RenewalEvent, Subscription
 
 

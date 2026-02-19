@@ -1,0 +1,28 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 130
+extend-exclude = [
+  "subscriptions/migrations",
+]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+
+[tool.mypy]
+python_version = "3.11"
+files = [
+  "asgi.py",
+  "manage.py",
+  "settings.py",
+  "urls.py",
+  "wsgi.py",
+  "subscriptions",
+]
+exclude = "(^subscriptions/migrations/.*\\.py$)"
+ignore_missing_imports = true
+show_error_codes = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = ["subscriptions.migrations.*"]
+ignore_errors = true

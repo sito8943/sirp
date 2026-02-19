@@ -14,4 +14,4 @@ whitenoise==6.11.0
 mypy==1.11.2
 pre_commit==4.5.1
 pytest==9.0.2
-ruff==0.6.9
+ruff==0.15.1

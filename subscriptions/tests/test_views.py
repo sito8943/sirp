@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -321,6 +322,76 @@ class SubscriptionFeaturesTests(TestCase):
         response = self.client.get(reverse("subscriptions:subscription-add"))
 
         self.assertContains(response, "Netflix")
+
+    def test_subscription_form_renders_next_billing_helper(self):
+        response = self.client.get(reverse("subscriptions:subscription-add"))
+
+        self.assertContains(response, 'id="billing-cycle-meta"')
+        self.assertContains(response, "Estimated next billing date:")
+
+    def test_create_subscription_calculates_next_billing_date_from_selected_cycle(self):
+        biweekly_cycle = BillingCycle.objects.create(
+            owner=self.user,
+            interval=2,
+            unit=BillingCycleUnit.WEEKS,
+        )
+        fixed_now = timezone.make_aware(timezone.datetime(2026, 2, 20))
+
+        with patch("subscriptions.views.timezone.now", return_value=fixed_now):
+            response = self.client.post(
+                reverse("subscriptions:subscription-add"),
+                {
+                    "name": "Team Plan",
+                    "provider": str(self.provider.pk),
+                    "cost_amount": "25.00",
+                    "cost_currency": "USD",
+                    "billing_cycle": str(biweekly_cycle.pk),
+                    "status": SubscriptionStatus.ACTIVE,
+                    "start_date": "2024-01-01",
+                    "cancellation_date": "",
+                    "notes": "",
+                },
+            )
+
+        self.assertRedirects(response, reverse("subscriptions:subscription-list"))
+        created = Subscription.objects.get(owner=self.user, name="Team Plan")
+        self.assertEqual(
+            created.next_billing_date,
+            timezone.make_aware(timezone.datetime(2026, 2, 23)),
+        )
+
+    def test_update_subscription_recalculates_next_billing_date_from_current_cycle(self):
+        monthly_cycle = self.cycle
+        self.subscription.billing_cycle = monthly_cycle
+        self.subscription.start_date = timezone.make_aware(timezone.datetime(2024, 1, 1))
+        self.subscription.next_billing_date = timezone.make_aware(timezone.datetime(2025, 1, 1))
+        self.subscription.save(
+            update_fields=["billing_cycle", "start_date", "next_billing_date"]
+        )
+        fixed_now = timezone.make_aware(timezone.datetime(2026, 2, 20))
+
+        with patch("subscriptions.views.timezone.now", return_value=fixed_now):
+            response = self.client.post(
+                reverse("subscriptions:subscription-edit", args=[self.subscription.pk]),
+                {
+                    "name": self.subscription.name,
+                    "provider": str(self.provider.pk),
+                    "cost_amount": "100.00",
+                    "cost_currency": "USD",
+                    "billing_cycle": str(monthly_cycle.pk),
+                    "status": SubscriptionStatus.ACTIVE,
+                    "start_date": "2024-01-01",
+                    "cancellation_date": "",
+                    "notes": "updated",
+                },
+            )
+
+        self.assertRedirects(response, reverse("subscriptions:subscription-list"))
+        self.subscription.refresh_from_db()
+        self.assertEqual(
+            self.subscription.next_billing_date,
+            timezone.make_aware(timezone.datetime(2026, 3, 21)),
+        )
 
     def test_subscription_list_shows_provider_cancel_action_when_link_exists(self):
         response = self.client.get(reverse("subscriptions:subscription-list"))

@@ -251,7 +251,6 @@ class SubscriptionFormMixin:
         "billing_cycle",
         "status",
         "start_date",
-        "next_billing_date",
         "cancellation_date",
         "notes",
     ]
@@ -268,16 +267,40 @@ class SubscriptionFormMixin:
             form.fields["billing_cycle"].queryset = scope_queryset_for_user(
                 BillingCycle.objects.all(), self.request.user
             )
-        for field_name in ("start_date", "next_billing_date", "cancellation_date"):
+        for field_name in ("start_date", "cancellation_date"):
             if field_name in form.fields:
                 form.fields[field_name].widget.input_type = "date"
         return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        billing_cycles = scope_queryset_for_user(
+            BillingCycle.objects.all(), self.request.user
+        ).values("id", "interval", "unit")
+        context["billing_cycle_meta"] = [
+            {
+                "id": str(cycle["id"]),
+                "interval": cycle["interval"],
+                "unit": cycle["unit"],
+            }
+            for cycle in billing_cycles
+        ]
+        return context
+
+    def assign_next_billing_date(self, form):
+        billing_cycle = form.cleaned_data["billing_cycle"]
+        start_date = form.cleaned_data["start_date"]
+        form.instance.next_billing_date = billing_cycle.next_due_date(
+            start_date,
+            reference_date=timezone.now(),
+        )
 
 
 class SubscriptionCreateView(
     OwnerAssignCreateMixin, LoginRequiredMixin, SubscriptionFormMixin, generic.CreateView
 ):
     def form_valid(self, form):
+        self.assign_next_billing_date(form)
         response = super().form_valid(form)
         SubscriptionHistory.objects.create(
             subscription=self.object,
@@ -295,6 +318,7 @@ class SubscriptionUpdateView(
     generic.UpdateView,
 ):
     def form_valid(self, form):
+        self.assign_next_billing_date(form)
         changed = form.changed_data.copy()
         response = super().form_valid(form)
         if changed:

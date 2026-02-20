@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from .currency import convert_to_base
 
@@ -78,6 +79,13 @@ class BillingCycle(TimeStampedModel):
         if self.unit == BillingCycleUnit.YEARS:
             return from_date + timedelta(days=self.interval * 365)
         return from_date
+
+    def next_due_date(self, start_date, reference_date=None):
+        reference = reference_date or timezone.now()
+        next_due = self.next_date(start_date)
+        while next_due <= reference:
+            next_due = self.next_date(next_due)
+        return next_due
 
 
 class Provider(TimeStampedModel):

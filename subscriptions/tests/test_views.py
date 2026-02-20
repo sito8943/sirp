@@ -361,11 +361,7 @@ class SubscriptionFeaturesTests(TestCase):
         )
 
     def test_update_subscription_recalculates_next_billing_date_from_current_cycle(self):
-        monthly_cycle = BillingCycle.objects.create(
-            owner=self.user,
-            interval=1,
-            unit=BillingCycleUnit.MONTHS,
-        )
+        monthly_cycle = self.cycle
         self.subscription.billing_cycle = monthly_cycle
         self.subscription.start_date = timezone.make_aware(timezone.datetime(2024, 1, 1))
         self.subscription.next_billing_date = timezone.make_aware(timezone.datetime(2025, 1, 1))

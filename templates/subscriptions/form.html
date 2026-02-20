@@ -10,10 +10,10 @@
       {% with widget_type=field|widget_input_type widget_class=field|widget_class_name %}
         {% if widget_type == "checkbox" %}
           <label class="uk-form-label">
-            {{ field|add_class:"uk-checkbox" }} {{ field.label }}
+            {{ field|add_class:"uk-checkbox" }} {{ field.label }}{% if field.field.required %} <span class="uk-text-danger">*</span>{% endif %}
           </label>
         {% else %}
-          <label class="uk-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          <label class="uk-form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="uk-text-danger">*</span>{% endif %}</label>
           <div class="uk-form-controls">
             {% if widget_type == "textarea" %}
               {{ field|add_class:"uk-textarea" }}
@@ -36,4 +36,76 @@
     <button class="uk-button uk-button-primary" type="submit">Save</button>
   </form>
 </div>
+
+{% if form.start_date and form.billing_cycle %}
+{{ billing_cycle_meta|json_script:"billing-cycle-meta" }}
+<script>
+  (function () {
+    var startDateInput = document.getElementById("{{ form.start_date.id_for_label }}");
+    var cycleInput = document.getElementById("{{ form.billing_cycle.id_for_label }}");
+    if (!startDateInput || !cycleInput) {
+      return;
+    }
+
+    var cycleMetaNode = document.getElementById("billing-cycle-meta");
+    if (!cycleMetaNode) {
+      return;
+    }
+    var cycleMeta = JSON.parse(cycleMetaNode.textContent);
+    var cycleById = {};
+    cycleMeta.forEach(function (cycle) {
+      cycleById[cycle.id] = cycle;
+    });
+
+    var helper = document.createElement("div");
+    helper.className = "uk-text-meta uk-margin-small-top";
+    helper.id = "next-billing-helper";
+    helper.textContent = "Estimated next billing date: -";
+    startDateInput.parentNode.appendChild(helper);
+
+    function addCycle(date, cycle) {
+      var daysToAdd = 0;
+      if (cycle.unit === "days") {
+        daysToAdd = cycle.interval;
+      } else if (cycle.unit === "weeks") {
+        daysToAdd = cycle.interval * 7;
+      } else if (cycle.unit === "months") {
+        daysToAdd = cycle.interval * 30;
+      } else if (cycle.unit === "years") {
+        daysToAdd = cycle.interval * 365;
+      }
+      var next = new Date(date.getTime());
+      next.setDate(next.getDate() + daysToAdd);
+      return next;
+    }
+
+    function formatDate(date) {
+      var year = date.getFullYear();
+      var month = String(date.getMonth() + 1).padStart(2, "0");
+      var day = String(date.getDate()).padStart(2, "0");
+      return year + "-" + month + "-" + day;
+    }
+
+    function updateHelper() {
+      var startDateValue = startDateInput.value;
+      var cycle = cycleById[cycleInput.value];
+      if (!startDateValue || !cycle) {
+        helper.textContent = "Estimated next billing date: -";
+        return;
+      }
+
+      var reference = new Date();
+      var next = addCycle(new Date(startDateValue + "T00:00:00"), cycle);
+      while (next <= reference) {
+        next = addCycle(next, cycle);
+      }
+      helper.textContent = "Estimated next billing date: " + formatDate(next);
+    }
+
+    startDateInput.addEventListener("change", updateHelper);
+    cycleInput.addEventListener("change", updateHelper);
+    updateHelper();
+  })();
+</script>
+{% endif %}
 {% endblock %}
